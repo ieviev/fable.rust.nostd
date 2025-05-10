@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="main.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="/home/ian/f/myrepos/fable.nostd/artifacts/bin/fable.nostd.core/release/fable.nostd.core.dll" />
+    <ProjectReference Include="..\fable.nostd.rust\fable.nostd.rust.fsproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Expecto" Version="10.2.3" />
+  </ItemGroup>
+
+</Project>

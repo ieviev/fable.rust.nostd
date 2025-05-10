@@ -1,0 +1,28 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "package-lock.json": true,
+        "**/Thumbs.db": true,
+        "node_modules/": true,
+        "fable_modules/": true,
+        ".idea/": true,
+        "**/*.fs.js": true,
+        "**/*.fs.js.map": true,
+        "venv/": true,
+        "**/bin/": true,
+        "**/obj/": true,
+        "Fable/tests/": true,
+        // "Fable/src/fsc-fable": true,
+        // "Fable/src/Transforms": true,
+        // "Fable/src/": true,
+        // "Fable/": true,
+    },
+    "rust-analyzer.linkedProjects": [
+        "/home/ian/f/myrepos/fable.nostd/src/fable.nostd.tests/main.rs"
+    ]
+
+}

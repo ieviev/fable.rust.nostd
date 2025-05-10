@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0</TargetFrameworks>
+    <DefineConstants>FABLE_COMPILER;FABLE_COMPILER_4;FABLE_COMPILER_RUST</DefineConstants>
+    <TrimMode>full</TrimMode>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="/home/ian/f/myrepos/fable.nostd/artifacts/bin/fable.nostd.core/release/fable.nostd.core.dll" />
+    <PackageReference Include="Fable.Core" Version="4.5.0" />
+    <PackageReference Include="fsil" Version="1.1.16" />
+    <Compile Include="Rust.fs" />
+    <Compile Include="Library.fs" />
+  </ItemGroup>
+
+</Project>

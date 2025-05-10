@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Fable/" />
+  <Folder Name="/Fable/src/">
+    <Project Path="Fable/src/fcs-fable/fcs-fable.fsproj" />
+  </Folder>
+  <Folder Name="/Fable/src/Fable.Transforms/" />
+  <Folder Name="/Fable/src/Fable.Transforms/Rust/" />
+  <Folder Name="/Fable/src/Fable.Transforms/Rust/AST/">
+    <Project Path="Fable/src/Fable.Transforms/Rust/AST/Rust.AST.fsproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/fable-nostd/fable-nostd.fsproj" />
+    <Project Path="src/fable.nostd.core/fable.nostd.core.fsproj" />
+    <Project Path="src/fable.nostd.rust/fable.nostd.rust.fsproj" />
+    <Project Path="src/fable.nostd.tests/fable.nostd.tests.fsproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,3 @@
+[submodule "Fable"]
+	path = Fable
+	url = git@github.com:ieviev/Fable.git
