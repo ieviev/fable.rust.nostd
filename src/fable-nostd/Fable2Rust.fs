@@ -1867,6 +1867,7 @@ module Util =
         | _, _, false, true, _, false -> expr |> mkAddrOfExpr
         | _, _, true, true, _, false -> expr
         | _, _, true, false, _, false -> expr |> makeClone
+        // | _, _, true, false, _, false -> expr |> mkAddrOfExpr // todo: addr
         | false, true, _, false, true, false -> expr //|> makeClone
         | _ -> expr
 

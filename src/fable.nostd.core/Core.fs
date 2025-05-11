@@ -5,7 +5,8 @@ open Fable.Core
 
 let (!!) x : 'T = nativeOnly
 
-let inline (~&) x = r.from x
+// & would override byref<>
+let inline (~&&) x = r.from x
 let inline (!&) x = rmut.from x
 let inline (!*) x = pmut.from x
 
