@@ -43,12 +43,12 @@
     <Compile Include="../../Fable/src/Fable.Transforms/MonadicTrampoline.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/Transforms.Util.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/OverloadSuffix.fs" />
-    <Compile Include="../../Fable/src/Fable.Transforms/FSharp2Fable.Util.fs" />
+    <Compile Include="FSharp2Fable.Util.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/ReplacementsInject.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/Replacements.Util.fs" />
     <Compile Include="Replacements.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/Replacements.fs" />
-    <Compile Include="../../Fable/src/Fable.Transforms/Replacements.Api.fs" />
+    <Compile Include="Replacements.Api.fs" />
     <Compile Include="FSharp2Fable.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/FableTransforms.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/Printer.fs" />

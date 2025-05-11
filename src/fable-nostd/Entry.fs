@@ -365,7 +365,6 @@ type Runner =
                     debugMode = (configuration = "Debug"),
                     optimizeFSharpAst = args.FlagEnabled "--optimize",
                     noReflection = args.FlagEnabled "--noReflection",
-                    bin = args.FlagEnabled "--bin",
                     verbosity = verbosity
                 )
 
