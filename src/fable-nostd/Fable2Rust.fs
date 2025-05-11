@@ -1869,7 +1869,7 @@ module Util =
         | _, _, true, false, _, false -> expr |> makeClone
         // | _, _, true, false, _, false -> expr |> mkAddrOfExpr // todo: addr
         | false, true, _, false, true, false -> expr //|> makeClone
-        | _ -> expr
+        | _ -> expr |> mkAddrOfExpr
 
 
     let getDeclMember (com: IRustCompiler) (decl: Fable.MemberDecl) =
