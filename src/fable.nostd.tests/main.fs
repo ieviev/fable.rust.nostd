@@ -1,30 +1,28 @@
 ﻿open fable.nostd.rust
 open fable.nostd.core
 
-let test(a: Vec<u8>) =
+let iterate(a: Vec<u8>) =
     a |> iter (fun _ -> printfn ("just iterating"))
 
-let testsum(a: Vec<u8>) = a |> fold 0uy (fun acc v -> acc + v)
+let foldsum(a: Vec<u8>) = a |> fold 0uy (fun acc v -> acc + v)
 
-let exists1(a: Vec<u8>) = a |> exists (fun v -> v = 1uy)
+let exists123(a: Vec<u8>) = a |> exists (fun v -> v = 123uy)
 
-let test2(a: Vec<u8>) =
+let iteratelines(a: Vec<u8>) =
     let mutable num_of_lines = 0
     let mutable lines = std.io.BufRead.lines (a.as_slice ())
 
-    iter
-        (fun v ->
-            printfn ($"iterating lines")
-            num_of_lines <- num_of_lines + 1)
-        lines
+    lines
+    |> iter (fun v ->
+        printfn ($"iterating lines: {unwrap v}")
+        num_of_lines <- num_of_lines + 1)
 
 
 let main() : Result<unit, string> =
     let s = str "main.fs"
     let file_result = fs.read (s) |> unwrap
-    let byte_slice = file_result
 
-    let num_bytes = byte_slice.len ()
+    let num_bytes = file_result.len ()
 
     printfn $"read {num_bytes} bytes!"
     Ok()

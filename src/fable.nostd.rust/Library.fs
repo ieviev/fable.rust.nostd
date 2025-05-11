@@ -157,4 +157,4 @@ type str with
     static member from(_: string) : str = nativeOnly
 
     [<Emit("$0.bytes()")>]
-    static member bytes() : iter<u8> = nativeOnly
+    static member bytes() : Iter<u8> = nativeOnly

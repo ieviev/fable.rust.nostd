@@ -1165,7 +1165,7 @@ module Util =
 
         // prevents emitting self on inlined code
         if ident.IsThisArgument && ctx.IsAssocMember then
-            makeSelf com ctx r ident.Type
+            makeSelf com ctx r ident.Type |> mkAddrOfExpr
         else
             mkGenericPathExpr (splitNameParts ident.Name) None
 
@@ -1866,10 +1866,9 @@ module Util =
         match implCopy, implClone, sourceIsRef, targetIsRef, mustClone, isUnreachable with
         | _, _, false, true, _, false -> expr |> mkAddrOfExpr
         | _, _, true, true, _, false -> expr
-        | _, _, true, false, _, false -> expr |> makeClone
-        // | _, _, true, false, _, false -> expr |> mkAddrOfExpr // todo: addr
-        | false, true, _, false, true, false -> expr //|> makeClone
-        | _ -> expr |> mkAddrOfExpr
+        | _, _, true, false, _, false -> expr //|> makeClone
+        | false, true, _, false, true, false -> expr |> mkAddrOfExpr//|> makeClone
+        | _ -> expr //|> mkAddrOfExpr
 
 
     let getDeclMember (com: IRustCompiler) (decl: Fable.MemberDecl) =
@@ -2576,12 +2575,15 @@ module Util =
                               _,
                               _,
                               _) when isByRefType com ident2.Type || ident2.IsMutable ->
-                transformIdent com ctx None ident2 |> Some
+                transformIdent com ctx None ident2 
+                |> mkAddrOfExpr
+                |> Some
             | Fable.Value(Fable.Null Fable.MetaType, _) -> None // special init value to skip initialization
             | Function(args, body, _name) ->
                 transformLambda com ctx (Some ident.Name) args body |> Some
             | _ ->
                 transformLeaveContext com ctx None value
+                
                 // |> BLOCK_COMMENT_SUFFIX (sprintf "usages - %i" (usageCount ident.Name usages))
                 |> Some
 
@@ -2594,9 +2596,11 @@ module Util =
                 else
                     init)
 
-        let isByRef = isAddrOfExpr value
+        let isByRef = isAddrOfExpr value || isByRefType com ident.Type
+        
         // todo: ismut
         // makeLocalStmt com ctx ident false ident.IsMutable tyOpt initOpt isByRef usages
+        // makeLocalStmt com ctx ident false true tyOpt initOpt isByRef usages
         makeLocalStmt com ctx ident false true tyOpt initOpt isByRef usages
 
     let makeLetStmts (com: IRustCompiler) ctx bindings letBody usages =
@@ -2616,7 +2620,7 @@ module Util =
                     match value with
                     | Function(args, body, _name) when not (ident.IsMutable) ->
                         if hasCapturedIdents com ctx ident.Name args body then
-                            // stdout.WriteLine $"ghasid: {isCaptured}"
+                            // stdout.WriteLine $"iscaptured: {isCaptured}: {ident.Name}"
                             makeLetStmt
                                 com
                                 ctx

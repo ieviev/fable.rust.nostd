@@ -43,3 +43,8 @@ type Open =
     /// requires const string
     static member inline emit(s: string) = RustInterop.emitRustExpr "" s
 
+    [<Emit("*$0")>]
+    static member inline ``*``(_: _) : 't = nativeOnly
+    [<Emit("*$0")>]
+    static member inline deref(_: _) : 't = nativeOnly
+

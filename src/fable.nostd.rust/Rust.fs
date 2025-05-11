@@ -4,12 +4,12 @@ open Fable.Core
 open fable.nostd.core
 
 [<Erase; Emit("_")>]
-type iter<'t> =
+type Iter<'t> =
     interface
         abstract next: unit -> voption<'t>
 
         static member inline Iterate
-            (this: iter<'t>, [<InlineIfLambda>] fn: 't -> unit)
+            (this: Iter<'t>, [<InlineIfLambda>] fn: 't -> unit)
             : unit =
             let mutable i = this.next ()
 
@@ -19,18 +19,16 @@ type iter<'t> =
                 i <- this.next ()
 
         static member inline IterateWhile
-            (this: iter<'t>, cond: byref<bool>, [<InlineIfLambda>] fn: 't -> unit)
+            (this: Iter<'t>, cond: byref<bool>, [<InlineIfLambda>] fn: 't -> unit)
             : unit =
             let mutable i = this.next ()
 
-            while cond && is_some i do
+            while deref cond && is_some i do
                 let v = unwrap (i)
                 fn v
                 i <- this.next ()
 
     end
-
-type iterator2<'t> = iter<'t>
 
 [<Erase; Emit("Vec<$0>")>]
 type Vec<'t> =
@@ -40,10 +38,10 @@ type Vec<'t> =
         abstract as_slice: unit -> r<slice<'t>>
 
         [<Emit("&mut $0.iter()")>]
-        abstract iter: unit -> rmut<iter<r<'t>>>
+        abstract iter: unit -> rmut<Iter<r<'t>>>
 
         [<Emit("&mut $0.into_iter()")>]
-        abstract into_iter: unit -> rmut<iter<'t>>
+        abstract into_iter: unit -> rmut<Iter<'t>>
 
         abstract len: unit -> unativeint
     end
@@ -57,16 +55,13 @@ type Vec<'t> =
     static member inline IterateWhile
         (this: Vec<'t>, cond: byref<bool>, [<InlineIfLambda>] fn: 't -> unit)
         : unit =
-        let mutable iterator = this.into_iter().v
+        let iterator = this.into_iter().v
         let mutable i = iterator.next ()
-        let mutable local_cond = cond
 
-        while cond && is_some i do
+        while deref cond && is_some i do
             let v = unwrap (i)
             fn v
             i <- iterator.next ()
-            local_cond <- cond
-
 
 
 [<Erase>]
@@ -95,4 +90,4 @@ module std =
     module io =
         module BufRead =
             [<Emit("std::io::BufRead::lines($0)")>]
-            let lines(arg: r<slice<u8>>) : iter<Result<string, _>> = nativeOnly
+            let lines(arg: r<slice<u8>>) : Iter<Result<string, _>> = nativeOnly
