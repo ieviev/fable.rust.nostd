@@ -44,6 +44,10 @@ type Vec<'t> =
         abstract into_iter: unit -> rmut<Iter<'t>>
 
         abstract len: unit -> unativeint
+        [<Emit("$0[$1]")>]
+        abstract Item: unativeint -> 't
+        [<Emit("$0[$1].clone()")>]
+        abstract item_cloned: unativeint -> 't
     end
 
     static member inline Iterate

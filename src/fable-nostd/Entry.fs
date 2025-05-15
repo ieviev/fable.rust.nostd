@@ -326,13 +326,7 @@ type Runner =
                 else
                     Ok()
 
-            let configuration =
-                let defaultConfiguration = if watch then "Debug" else "Release"
-
-                match args.Value("-c", "--configuration") with
-                | None -> defaultConfiguration
-                | Some c when String.IsNullOrWhiteSpace c -> defaultConfiguration
-                | Some configurationArg -> configurationArg
+            let configuration = "Release" // so watch and build are consistent
 
             let define =
                 args.Values "--define"

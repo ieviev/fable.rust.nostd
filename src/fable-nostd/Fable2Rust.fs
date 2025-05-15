@@ -222,6 +222,10 @@ module TypeInfo =
         let fullName = fullName.Replace(".", "::")
         mkIdentPat fullName false false
 
+    let makeFullNameIdentPatMut(fullName: string) =
+        let fullName = fullName.Replace(".", "::")
+        mkIdentPat fullName false true
+
     let primitiveType(name: string) : Rust.Ty = mkGenericPathTy [ name ] None
 
     let getLibraryImportName (com: IRustCompiler) ctx moduleName typeName =
@@ -1174,22 +1178,17 @@ module Util =
         | Fable.IdentExpr ident -> ident.IsThisArgument && ctx.IsAssocMember
         | _ -> false
 
-    // let transformExprMaybeIdentExpr (com: IRustCompiler) ctx (expr: Fable.Expr) =
-    //     match expr with
-    //     | Fable.IdentExpr ident when ident.IsThisArgument && ctx.IsAssocMember ->
-    //         // avoids the extra Lrc wrapping for self that transformIdentGet does
-    //         transformIdent com ctx None id
-    //     | _ -> com.TransformExpr(ctx, expr)
 
     let transformIdentGet com ctx r (ident: Fable.Ident) =
         let expr = transformIdent com ctx r ident
 
+        // stdout.WriteLine $"ident get: {expr}"
         if ident.IsMutable && not (isInRefType com ident.Type) then
             expr |> mutableGet
         elif isBoxScoped ctx ident.Name then
             expr |> makeLrcPtrValue com ctx
-        // elif isRefScoped ctx ident.Name then
-        //     expr |> makeClone // |> mkDerefExpr |> mkParenExpr
+        elif isRefScoped ctx ident.Name then
+            expr |> makeClone // |> mkDerefExpr |> mkParenExpr
         else
             expr
 
@@ -1866,8 +1865,13 @@ module Util =
         match implCopy, implClone, sourceIsRef, targetIsRef, mustClone, isUnreachable with
         | _, _, false, true, _, false -> expr |> mkAddrOfExpr
         | _, _, true, true, _, false -> expr
-        | _, _, true, false, _, false -> expr //|> makeClone
-        | false, true, _, false, true, false -> expr |> mkAddrOfExpr//|> makeClone
+        | _, _, true, false, _, false -> 
+            // stdout.WriteLine $"rc: {e.Type}"
+            match e.Type with 
+            | t when (shouldBeRefCountWrapped com ctx t).IsSome -> expr |> makeClone
+            | Fable.AST.Fable.Type.Option(t,_) when (shouldBeRefCountWrapped com ctx t).IsSome -> expr |> makeClone
+            | _ -> expr
+        | false, true, _, false, true, false -> expr //|> mkAddrOfExpr//|> makeClone
         | _ -> expr //|> mkAddrOfExpr
 
 
@@ -2171,14 +2175,24 @@ module Util =
         | {
               MemberRef = Some(Fable.MemberRef(entRef, memRef))
           } ->
+            // stdout.WriteLine $"{entRef.FullName} : {memRef.CompiledName}"
             match entRef.FullName, memRef.CompiledName with
             | "fable.nostd.core", "str" ->
                 // stdout.WriteLine $"%A{callInfo}"
                 match callInfo.Args with
                 | [ Fable.Expr.Value(Fable.AST.Fable.ValueKind.StringConstant v, _) ] ->
                     ValueSome(mkStrLitExpr v)
-                | _ -> failwith "expected str const"
-            | _ -> ValueNone
+                | _ -> 
+                    let args = transformExpr com ctx callInfo.Args[0]
+                    let asstr = mkMethodCallExpr "as_str" None args []
+                    ValueSome(asstr)
+            | "fable.nostd.core", "mod" ->
+                stdout.WriteLine $"%A{callInfo.Args}"
+                let comp = com :?> Compiler.RustCompiler
+                // comp.ImportModule(info.Path)
+                ValueNone
+            | _ -> 
+                ValueNone
         | _ -> ValueNone
 
 
@@ -2904,7 +2918,12 @@ module Util =
                         unionCase.UnionCaseFields
                         |> List.mapi (fun i _field ->
                             let fieldName = $"{identName}_{caseIndex}_{i}"
-                            makeFullNameIdentPat fieldName)
+                            let ft: Fable.Type = _field.FieldType
+                            // stdout.WriteLine $"ft: %A{ft}"
+                            match _field.FieldType with 
+                            // | Fable.Type.Number _ -> makeFullNameIdentPatMut fieldName
+                            | _ -> makeFullNameIdentPat fieldName
+                        )
                     | _ -> unionCase.UnionCaseFields |> List.map (fun _field -> WILD_PAT)
 
                 let unionCaseName = getUnionCaseName com ctx entRef unionCase
@@ -3027,12 +3046,17 @@ module Util =
                     | _ -> None
 
                 let pat =
+                    // todo: pat addr 
                     match patOpt with
                     | Some pat -> pat
-                    | _ -> com.TransformExpr(ctx, caseExpr) |> mkLitPat
+                    | _ -> 
+                        com.TransformExpr(ctx, caseExpr) 
+                        |> mkLitPat
 
                 let extraVals = namesForIndex evalType evalName targetIndex
-                makeArm pat targetIndex (boundValues) extraVals)
+                makeArm pat targetIndex (boundValues) extraVals
+                
+            )
 
         let defaultArms =
             match defaultCase with
@@ -4149,6 +4173,7 @@ module Util =
         ctx
         (body: Fable.Expr)
         : list<AST.Types.Item> =
+        // stdout.WriteLine $"%A{body}"
         match body with
         | Fable.Expr.Import(info, typ, range) ->
             // typ.IsUnit
@@ -4164,10 +4189,25 @@ module Util =
 
             []
         | Fable.Expr.IdentExpr(ident) ->
-            if ident.Name = "Main.main" then [] else failwith "todo"
+            match ident.Name with 
+            
+            | "Main.main" -> []
+            | _ -> 
+                failwith $"unhandled module action ident: {ident}"
         | Fable.Expr.Call(callee, info, typ, range) ->
+            
             match callee with
-            | Fable.Expr.IdentExpr(ident) when ident.Name = "Main.main" -> []
+            | Fable.Expr.IdentExpr(ident) -> 
+                match ident.Name with 
+                | "Main.main" -> []
+                | "fable.nostd.core.mod" ->
+                    match info.Args with 
+                    | [Fable.Expr.Value(Fable.AST.Fable.ValueKind.StringConstant v, _)] ->
+                        let comp = com :?> Compiler.RustCompiler
+                        comp.ImportModule(v)
+                        []
+                    | _ -> failwith $"expected string constant {ident}"
+                | _ -> failwith $"unhandled module call: {ident}"
             | _ -> failwith "todo"
         // | Value(kind,range) -> failwith "todo"
         // | Lambda(arg,body,name) -> failwith "todo"
@@ -4277,27 +4317,7 @@ module Util =
                 | _ -> ()
         |]
 
-        // mkItemStmt
-        // mkFnItem
-
-
-        // let attrs = transformAttributes com ctx memb.Attributes memb.XmlDoc
-        // let fnBody = [ mkExprStmt value ] |> mkBlock |> Some
-
-        // let fnDecl = mkFnDecl [] (mkFnRetTy ty)
-        // let fnKind = mkFnKind DEFAULT_FN_HEADER fnDecl NO_GENERICS fnBody
-        // let fnItem = mkFnItem attrs name fnKind
         [ yield! items ]
-
-    // let modItem = [ yield! items ] |> mkModItem [] decl.Name
-    // let modItem = modItem |> mkPublicItem
-    // // [ yield! items ]
-    // [ modItem ]
-
-    // // is the member return type the same as the entity
-    // let isFluentMemberType (ent: Fable.Entity) = function
-    //     | Fable.DeclaredType(entRef, _) -> entRef.FullName = ent.FullName
-    //     | _ -> false
 
     let isInterfaceMember (com: IRustCompiler) (memb: Fable.MemberFunctionOrValue) =
         (memb.IsDispatchSlot || memb.IsOverrideOrExplicitInterfaceImplementation)
@@ -5320,7 +5340,6 @@ module Util =
             |> mergeNamespaceDecls com ctx
             |> List.map (fun decl ->
                 let lazyDecl = lazy (transformDecl com ctx decl)
-
                 match decl with
                 | Fable.ModuleDeclaration _ -> () // delay module decl transform
                 | _ -> lazyDecl.Force() |> ignore // transform other decls first
@@ -5454,18 +5473,19 @@ module Util =
             |> Seq.sortBy (fun import -> import.Selector)
             |> Seq.iter (fun import ->
                 let currfile_no_ext = Path.GetFileNameWithoutExtension(com.CurrentFile)
-                let is_local = import.Path.StartsWith("./")
-                // stdout.WriteLine $"curr:####: {currfile}"
+                let is_local = import.Path.StartsWith("./") || import.Path.StartsWith("../")
+                // stdout.WriteLine $"curr:####: {currfile_no_ext}"
                 // stdout.WriteLine $"proj:####: {com.ProjectFile}"
-                // stdout.WriteLine $"importing####: {import.Path}"
-                // stdout.WriteLine $"importing####M: {import.ModulePath}"
-                // stdout.WriteLine $"importing####L: {import.LocalIdent}"
-                // stdout.WriteLine $"importing####SEL: {import.Selector}"
+                // stdout.WriteLine $"importing####: {import.Path}" // rel path
+                // stdout.WriteLine $"importing####M: {import.ModulePath}" // full path
+                // stdout.WriteLine $"importing####L: {import.LocalIdent}" StringOrInt
+                // stdout.WriteLine $"importing####SEL: {import.Selector}" Shared::StringOrInt
                 let modPath =
                     if import.Path.Length = 0 || import.Selector.StartsWith "std::" then
                         [||] // empty path, means direct import of the selector
                     elif is_local then
-                        // [| "crate"; currfile_no_ext |]
+                        // let import_no_ext = Path.GetFileNameWithoutExtension(import.Path)
+                        // [| "crate"; import_no_ext |]
                         [| "crate" |]
                     else
                         [| "crate" |]
@@ -5519,6 +5539,8 @@ module Compiler =
 
     // per file
     type RustCompiler(com: Fable.Compiler) =
+        // do stdout.WriteLine $"creating compiler: %A{com.SourceFiles}"
+        
         let onlyOnceWarnings = HashSet<string>()
         let imports = Dictionary<string, Import>()
 
@@ -5642,6 +5664,7 @@ module Compiler =
     let makeCompiler com = RustCompiler(com)
 
     let transformFile (com: Fable.Compiler) (file: Fable.File) =
+        
         let com = makeCompiler com :> IRustCompiler
 
         let declScopes =
@@ -5665,7 +5688,6 @@ module Compiler =
             ScopedEntityGenArgs = Set.empty
             ScopedMemberGenArgs = Set.empty
             ScopedSymbols = Map.empty
-            // HasMultipleUses = false
             InferAnyType = false
             IsAssocMember = false
             IsLambda = false
@@ -5676,8 +5698,11 @@ module Compiler =
 
         let is_main = isBin com
 
+        // stdout.WriteLine $"curr file: {com.CurrentFile}"
         let topAttrs = [
+            
             if isLastFileInProject com then
+                // stdout.WriteLine $"\nis last file: {com.CurrentFile}"
                 // adds "no_std" to crate if feature is enabled
                 // mkInnerAttr "cfg_attr" [ "feature = \"no_std\""; "no_std" ]
                 mkInnerAttr "allow" [
@@ -5686,14 +5711,21 @@ module Compiler =
                     "non_snake_case"
                     "non_upper_case_globals"
                 ]
+            else 
+                // let lastFile = Array.last com.SourceFiles
+                // stdout.WriteLine $"last: {lastFile}"
+                // stdout.WriteLine $"{com.IsPrecompilingInlineFunction}"
+                // stdout.WriteLine $"\nNOT last file: {com.CurrentFile} : {lastFile}"
+                ()
+
         ]
 
         if is_main then
             stdout.WriteLine "creating bin"
             let importItems = com.GetAllImports(ctx) |> transformImports com ctx
             let declItems = file.Declarations |> transformDeclarations com ctx
-            let modItems = getModuleItems com ctx // global module imports
-            let nsItems = getNamespaceItems com ctx // global namespace imports
+            // let modItems = getModuleItems com ctx // global module imports
+            // let nsItems = getNamespaceItems com ctx // global namespace imports
 
             if declItems.Length <> 2 then
                 failwith $"expecetd 2 decls, got : {declItems.Length}"

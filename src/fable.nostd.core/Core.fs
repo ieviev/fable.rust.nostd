@@ -27,6 +27,9 @@ let (?<-) (o: obj) (prop: obj) (v: obj) : unit = nativeOnly
 /// &str slice from (const) string
 let str(_: string) : r<str> = nativeOnly
 
+/// import mod
+let ``mod``(_: string) : unit = nativeOnly
+
 [<AbstractClass; Sealed; AutoOpen; Erase>]
 type Open =
     [<Emit("$0.unwrap()")>]

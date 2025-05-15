@@ -320,7 +320,7 @@ type ResetablePollingFileWatcher(fileNameGlobFilters, ignoredDirectoryNameRegexe
 
 /// A FileSystemWatcher wrapper that implements the IFileSystemWatcher interface.
 type DotnetFileWatcher(globFilters: string list) =
-    let fileSystemWatcher = new FileSystemWatcher()
+    let fileSystemWatcher = new FileSystemWatcher(".")
 
     let onFileChange = new Event<string>()
     let onError = new Event<ErrorEventArgs>()

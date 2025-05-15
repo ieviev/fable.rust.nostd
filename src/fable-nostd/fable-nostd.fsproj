@@ -54,7 +54,8 @@
     <Compile Include="../../Fable/src/Fable.Transforms/Printer.fs" />
     <Compile Include="../../Fable/src/Fable.Transforms/Rust/RustPrinter.fs" />
     <Compile Include="Fable2Rust.fs" />
-    <Compile Include="../../Fable/src/Fable.Transforms/State.fs" />
+    <!-- <Compile Include="../../Fable/src/Fable.Transforms/State.fs" /> -->
+    <Compile Include="State.fs" />
     <!--  -->
     <Compile Include="Util.fsi" />
     <Compile Include="Util.fs" />
