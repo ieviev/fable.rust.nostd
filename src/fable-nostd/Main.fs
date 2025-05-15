@@ -1417,8 +1417,6 @@ let startCompilationAsync state =
                                 async {
                                     match! agent.Receive() with
                                     | Changes(timestamp, changes) ->
-                                        stdout.WriteLine "changes"
-
                                         match state.Watcher with
                                         // Discard changes that may have happened before we restarted the watcher
                                         | Some w when w.StartedAt < timestamp ->
@@ -1440,7 +1438,6 @@ let startCompilationAsync state =
                                 }
 
                             let onChange changes =
-                                stdout.WriteLine "onchange!"
                                 Changes(DateTime.UtcNow, changes) |> agent.Post
 
                             loop {
