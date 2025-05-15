@@ -5702,43 +5702,30 @@ module Compiler =
         let topAttrs = [
             
             if isLastFileInProject com then
-                // stdout.WriteLine $"\nis last file: {com.CurrentFile}"
-                // adds "no_std" to crate if feature is enabled
-                // mkInnerAttr "cfg_attr" [ "feature = \"no_std\""; "no_std" ]
                 mkInnerAttr "allow" [
                     "unused"
                     "dead_code"
                     "non_snake_case"
                     "non_upper_case_globals"
                 ]
-            else 
-                // let lastFile = Array.last com.SourceFiles
-                // stdout.WriteLine $"last: {lastFile}"
-                // stdout.WriteLine $"{com.IsPrecompilingInlineFunction}"
-                // stdout.WriteLine $"\nNOT last file: {com.CurrentFile} : {lastFile}"
-                ()
-
         ]
 
         if is_main then
-            stdout.WriteLine "creating bin"
+            // stdout.WriteLine "creating bin"
             let importItems = com.GetAllImports(ctx) |> transformImports com ctx
             let declItems = file.Declarations |> transformDeclarations com ctx
             // let modItems = getModuleItems com ctx // global module imports
             // let nsItems = getNamespaceItems com ctx // global namespace imports
 
             if declItems.Length <> 2 then
-                failwith $"expecetd 2 decls, got : {declItems.Length}"
+                failwith $"expected 2 decls, got : {declItems.Length}"
 
 
             let firstmod =
                 match declItems[0].kind with
-                | ItemKind.Mod(unsaf, ModKind.Loaded(inner, inlin, sp)) ->
-                    if inner.Count <> 1 then
-                        failwith $"expected 1 main module, got : {inner.Count}"
-
+                | ItemKind.Mod(_, ModKind.Loaded(inner, _, _)) ->
                     match inner[0].kind with
-                    | ItemKind.Mod(unsaf, ModKind.Loaded(inner, inlin, sp)) -> inner
+                    | ItemKind.Mod(_, ModKind.Loaded(inner, _, _)) -> inner
                     | _ -> failwith $"expected 1 main module, got : {inner.Count}"
                 | _ -> failwith "expected module"
 
